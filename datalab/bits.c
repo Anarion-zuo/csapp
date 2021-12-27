@@ -192,7 +192,9 @@ int isTmax(int x)
  */
 int allOddBits(int x)
 {
-    return 2;
+    // 0xA = 10 = 8 + 2 = 1010B
+    int A8 = 0xaa + (0xaa << 8) + (0xaa << 16) + (0xaa << 24);
+    return !((A8 & x) ^ A8);
 }
 /*
  * negate - return -x
@@ -240,7 +242,8 @@ int conditional(int x, int y, int z)
  */
 int isLessOrEqual(int x, int y)
 {
-    return 2;
+    // ! x > y
+    return ((x + (~y) + 1) >> 31) | !(x ^ y);
 }
 // 4
 /*
