@@ -143,7 +143,17 @@ NOTES:
  */
 int bitXor(int x, int y)
 {
-    return 2;
+    /**
+     * @brief consider bool variable A B
+     *   A 0 1
+     * B
+     * 0   0 1
+     * 1   1 0
+     * 
+     * F = (~A)&B | A&(~B) = ~((~A)(~B))(~(AB))
+     */
+
+    return (~((~x) & (~y))) & (~(x & y));
 }
 /*
  * tmin - return minimum two's complement integer
