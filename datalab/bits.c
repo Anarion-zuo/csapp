@@ -219,7 +219,9 @@ int negate(int x)
  */
 int isAsciiDigit(int x)
 {
-    return 2;
+    int diff1 = x + (~0x30) + 1;
+    int diff2 = 0x39 + (~x) + 1;
+    return (!(diff1 >> 31)) & (!(diff2 >> 31));
 }
 /*
  * conditional - same as x ? y : z
