@@ -232,8 +232,9 @@ int isAsciiDigit(int x)
  */
 int conditional(int x, int y, int z)
 {
-    
-    return 2;
+    int isZero = !x;
+    int mask = (isZero << 31) >> 31;
+    return (mask & z) | ((~mask) & y);
 }
 /*
  * isLessOrEqual - if x <= y  then return 1, else return 0
