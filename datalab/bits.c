@@ -179,7 +179,8 @@ int tmin(void)
  */
 int isTmax(int x)
 {
-    return !(x ^ ((1 << 31) >> 31) ^ (~x));
+    int minus1 = x + 1;
+    return !(((~minus1) + 1) ^ minus1) & !!minus1;
 }
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -227,6 +228,7 @@ int isAsciiDigit(int x)
  */
 int conditional(int x, int y, int z)
 {
+    
     return 2;
 }
 /*
