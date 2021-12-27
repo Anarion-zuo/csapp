@@ -144,7 +144,7 @@ NOTES:
 int bitXor(int x, int y)
 {
     /**
-     * @brief consider bool variable A B
+     * @brief consider bool variables A B
      *   A 0 1
      * B
      * 0   0 1
@@ -163,8 +163,11 @@ int bitXor(int x, int y)
  */
 int tmin(void)
 {
-
-    return 2;
+    /**
+     * @brief 1 at the most significant bit
+     * 
+     */
+    return 0x1 << 31;
 }
 // 2
 /*
