@@ -245,8 +245,16 @@ int conditional(int x, int y, int z)
  */
 int isLessOrEqual(int x, int y)
 {
-    // ! x > y
-    return ((x + (~y) + 1) >> 31) | !(x ^ y);
+    // simulate PSW flags
+    // y - x
+    int d = y + (~x) + 1;
+    int xs = !!((~x) >> 31), ys = !!(y >> 31);
+    int sf = !!(d >> 31);   // true when d is not negative
+    int of = (xs & ys & (!sf)) | ((!xs) & (!ys) & sf);
+    // when the result is non-negative, return 1.
+    // when there is an overflow and y is positive, return 1.
+    // when there is an overflow and y is negative, return 0.
+    return ((!of) & (!sf)) | (of & (!ys));
 }
 // 4
 /*
