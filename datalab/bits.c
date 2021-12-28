@@ -299,7 +299,46 @@ int howManyBits(int x)
  */
 unsigned floatScale2(unsigned uf)
 {
-    return 2;
+    unsigned int sign = uf >> 31;
+    unsigned int exp = (uf << 1) >> 24;
+    unsigned int m = (uf << 9) >> 9;
+    // printf("0x%x %u %u %u\n", uf, sign, exp, m);
+    if (exp == 0) {
+        if (m != 0) {
+            // printf("denorm\n");
+            // denorm
+            unsigned int newM = m << 1;
+            if (newM & (0x1 << 23)) {
+                // change to norm form
+                exp += 1;
+                newM = newM & (~(0x1 << 23));
+                return (sign << 31) | (exp << 23) | newM;
+            } else {
+                // still denorm
+                return (sign << 31) | (exp << 23) | newM;
+            }
+        } else {
+            printf("zero\n");
+            // 0
+            // keep the sign bit
+            return uf;
+        }
+    } else if (exp == 255) {
+        // printf("infinity\n");
+        // infinity or nan
+        return uf;
+    }
+    // normalized floating point
+    exp += 1;
+    if (exp == 255) {
+        // infinity
+        // printf("infinity\n");
+        return (sign << 31) | (exp << 23);
+    }
+    // normalized number
+    // printf("%u %u %u\n", sign, exp, m);
+    // printf("normailzed \n");
+    return (sign << 31) | (exp << 23) | m;
 }
 /*
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
