@@ -318,7 +318,7 @@ unsigned floatScale2(unsigned uf)
                 return (sign << 31) | (exp << 23) | newM;
             }
         } else {
-            printf("zero\n");
+            // printf("zero\n");
             // 0
             // keep the sign bit
             return uf;
@@ -354,7 +354,40 @@ unsigned floatScale2(unsigned uf)
  */
 int floatFloat2Int(unsigned uf)
 {
-    return 2;
+    unsigned int sign = uf >> 31;
+    unsigned int exp = (uf << 1) >> 24;
+    unsigned int m = (uf << 9) >> 9;
+    if (exp < 127) {
+        // fraction
+        // printf("fraction\n");
+        return 0;
+    }
+    const int inf = 0x80000000u;
+    if (exp == 255) {
+        // explicitly out of range
+        // printf("inf or nan\n");
+        return inf;
+    }
+    // normalized
+    exp -= 127;
+    if (exp >= 31) {
+        // out of range
+        // printf("non inf out of range\n");
+        return inf;
+    }
+    m = m | (0x1 << 23);
+    int offset = exp - 23;
+    int ret;
+    if (offset < 0) {
+        ret = m >> (-offset);
+    } else {
+        ret = m << offset;
+    }
+    // printf("ok\n");
+    if (sign) {
+        return -ret;
+    }
+    return ret;
 }
 /*
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
