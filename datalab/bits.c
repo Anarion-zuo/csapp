@@ -404,5 +404,41 @@ int floatFloat2Int(unsigned uf)
  */
 unsigned floatPower2(int x)
 {
-    return 2;
+    if (x >= 128) {
+        // too large
+        // printf("too large\n");
+        return (0xff << 23);
+    }
+    if (x <= -127) {
+        // denorm
+        // printf("denorm ");
+        int offset = -x - 126;
+        offset = 23 - offset;
+        if (offset <= 0) {
+            // printf("too little\n");
+            return 0;
+            // do not differentiate between positive and negative 0!
+            // if (x >= 0) {
+            //     return 0;
+            // } else {
+            //     return 1u << 31;
+            // }
+        }
+        // printf("ok\n");
+        unsigned int m = 1u << offset;
+        if (x >= 0) {
+            return m;
+        } else {
+            return (1u << 31) | m;
+        }
+    }
+    // normalized
+    // printf("normalized\n");
+    unsigned int exp = x + 127;
+    unsigned int ret = exp << 23;
+    if (x >= 0) {
+        return ret;
+    } else {
+        return (1u << 31) | ret;
+    }
 }
