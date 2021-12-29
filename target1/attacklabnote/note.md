@@ -16,4 +16,6 @@ buffer size 0x28, 40 bytes.
    c:   c3                      ret 
 
 buffer head: rsp = 0x000000005561dc78
-place 
+Let getbuf return to the beginning of the buf. Execute the code here.
+Place the string at the beginning of the stack of the function test.
+rsp = 0x5561dca8
