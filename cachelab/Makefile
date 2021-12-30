@@ -10,7 +10,7 @@ all: csim test-trans tracegen
 	-tar -cvf ${USER}-handin.tar  csim.c trans.c 
 
 csim: csim.c cachelab.c cachelab.h
-	$(CC) $(CFLAGS) -o csim csim.c cachelab.c -lm 
+	$(CC) $(CFLAGS) -o csim csim.c cachelab.c cache_sys.c -lm 
 
 test-trans: test-trans.c trans.o cachelab.c cachelab.h
 	$(CC) $(CFLAGS) -o test-trans test-trans.c cachelab.c trans.o 
