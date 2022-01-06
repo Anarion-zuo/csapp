@@ -10,7 +10,7 @@
  * Please fill in the following team struct 
  */
 team_t team = {
-    "bovik",              /* Team name */
+    "anarion",              /* Team name */
 
     "Harry Q. Bovik",     /* First member full name */
     "bovik@nowhere.edu",  /* First member email address */
