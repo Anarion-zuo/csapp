@@ -18,6 +18,7 @@ int allocateOneBigBlock(struct HeapBigBlock **retp) {
     void * p = mem_sbrk(PAGE_SIZE);
     if (p == (void *)-1) {
         // sbrk failed
+        printf("sbrk failed... cannot allocate one big block...\n");
         return -1;
     }
     struct HeapBigBlock *block = p;
@@ -49,10 +50,12 @@ int fetchNBigBlocks(struct HeapBigBlock **retp, unsigned int n, struct HeapBigBl
     }
     // return the first one
     if (allocateOneBigBlock(retp) < 0) {
+        printf("cannot allocate continuous big blocks...\n");
         return -1;
     }
     for (int i = 0; i < n - 1; ++i) {
         if (allocateOneBigBlock(NULL) < -1) {
+            printf("cannot allocate continuous big blocks...\n");
             return -1;
         }
     }

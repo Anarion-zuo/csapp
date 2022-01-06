@@ -33,14 +33,14 @@ int fetchNBigBlocks(struct HeapBigBlock **retp, unsigned int n, struct HeapBigBl
 
 int allocateHeapSystem(struct HeapSystem *heap, size_t size, void **retp) {
     // printf("heap state big block head %p\n", heap->bighead);
-    // printf("a %u ", size);
+    // printf("a %u \n", size);
     int index = sizeToBlockIndex(size);
     if (index < 0) {
         // allocating 0 size
         if (retp) {
             *retp = NULL;
         }
-        // printf("too little\n");
+        printf("too little\n");
         return 0;
     }
     if (index >= BLOCK_LIST_MAXIDX) {
@@ -52,6 +52,7 @@ int allocateHeapSystem(struct HeapSystem *heap, size_t size, void **retp) {
         // printf("big block count %u\n", count);
         struct HeapBigBlock *bigblock;
         if (fetchNBigBlocks(&bigblock, count, &heap->bighead) < 0) {
+            printf("cannot fetch multiple big blocks...\n");
             return -1;
         }
         // printf("after fetchN heap state big block head 0x%p\n", heap->bighead);
@@ -67,18 +68,14 @@ int allocateHeapSystem(struct HeapSystem *heap, size_t size, void **retp) {
 }
 
 void returnABigBlock(struct HeapBigBlock *block, struct HeapBigBlock **head);
-void returnASmallBlock(struct HeapBlock **list, int index, struct HeapBigBlock **head, struct HeapBlock *block);
+void returnASmallBlock(struct HeapBlock **list, struct HeapBigBlock **head, struct HeapBlock *block);
+int isABigBlock(void *p);
 
 void deallocateHeapSystem(struct HeapSystem *heap, void *p) {
-    struct HeapBlockHeader *header = p - ALIGN(sizeof(struct HeapBlockHeader));
-    size_t size = header->size;
-    unsigned int index = sizeToBlockIndex(size);
-    // printf("f address 0x%p size %u\n", p, size);
-    if (index < 0) {
-        printf("deallocating undefined size...\n");
-        exit(1);
-    }
-    if (index >= BLOCK_LIST_MAXIDX) {
+    // size_t size = header->size;
+    if (isABigBlock(p)) {
+        struct HeapBlockHeader *header = p - ALIGN(sizeof(struct HeapBlockHeader));
+        unsigned int size = header->size;
         // deallocating big blocks
         unsigned int count = size / PAGE_SIZE, more = size % PAGE_SIZE;
         if (more) {
@@ -91,5 +88,5 @@ void deallocateHeapSystem(struct HeapSystem *heap, void *p) {
         return;
     }
     // deallocating a small block
-    returnASmallBlock(heap->blockList, sizeToBlockIndex(size), &heap->bighead, (struct HeapBlock *)header);
+    returnASmallBlock(heap->blockList, &heap->bighead, p);
 }

@@ -18,6 +18,8 @@
 #include "mm.h"
 #include "memlib.h"
 
+#include "heapsys.h"
+
 /*********************************************************
  * NOTE TO STUDENTS: Before you do anything else, please
  * provide your team information in the following struct.
@@ -35,20 +37,39 @@ team_t team = {
     ""
 };
 
-/* single word (4) or double word (8) alignment */
-#define ALIGNMENT 8
-
-/* rounds up to the nearest multiple of ALIGNMENT */
-#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
 
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
+
+static struct HeapSystem *heap;
 
 /* 
  * mm_init - initialize the malloc package.
  */
 int mm_init(void)
 {
+
+    // check pagesize settings
+    if (PAGE_SIZE < ALIGN(sizeof(struct HeapBigBlock)) + 8 * BLOCK_LIST_MAXIDX
+        || ALIGN(sizeof(struct HeapBigBlock)) == ALIGN(sizeof(struct HeapBlockHeader))
+    ) {
+        printf("some things are incompatible...\n");
+        exit(1);
+    }
+
+    // allocate heap object
+    heap = mem_sbrk(ALIGN(sizeof(struct HeapSystem)));
+    if (heap == (void *)-1) {
+        return -1;
+    }
+
+    // printf("heap object allocated\n");
+
+    // init
+    heapSystemInit(heap);
+
+    // printf("heap object init\n");
+
     return 0;
 }
 
@@ -58,14 +79,27 @@ int mm_init(void)
  */
 void *mm_malloc(size_t size)
 {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
+    /*int newsize = ALIGN(size + SIZE_T_SIZE);
     void *p = mem_sbrk(newsize);
     if (p == (void *)-1)
 	return NULL;
     else {
         *(size_t *)p = size;
         return (void *)((char *)p + SIZE_T_SIZE);
+    }*/
+
+    // printf("heap state big block head %p\n", heap->bighead);
+
+    if (size == 0) {
+        return NULL;
     }
+    // printf("a size %u\n", size);
+    void *p;
+    if (allocateHeapSystem(heap, size, &p) < 0) {
+        return (void *)-1;
+    }
+        // printf("after malloc heap state big block head 0x%p\n", heap->bighead);
+    return p;
 }
 
 /*
@@ -73,6 +107,11 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *ptr)
 {
+    if (ptr == NULL) {
+        return;
+    }
+    // printf("f address %p\n", ptr);
+    deallocateHeapSystem(heap, ptr);
 }
 
 /*

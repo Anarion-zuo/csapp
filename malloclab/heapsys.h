@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include "memlib.h"
 
-#define BLOCK_LIST_MAXIDX 128
-#define PAGE_SIZE 4096
+#define BLOCK_LIST_MAXIDX 32
+#define PAGE_SIZE 8192
 
 /* single word (4) or double word (8) alignment */
 #define ALIGNMENT 8
@@ -19,6 +19,10 @@
  * This header can be overwritten after the block is allocated, so it takes no extra space.
  * 
  */
+// 首地址 arr 或 &arr[0]
+// arr[i]是 *(arr + i)
+// 地址是 arr + i
+// 要得到地址就是 &arr[i] 也就是 &*(arr + i) 也就是 arr + i
 struct HeapBlock {
     struct HeapBlock *next;
     // struct HeapBigBlock *bigblock;        // who does this one belong to
