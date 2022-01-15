@@ -16,6 +16,8 @@
 
 #define MAXBUF 1024
 
+#define USE_INTERP_RESULT 1
+
 #ifdef HAS_GUI
 #include <tk.h>
 #endif /* HAS_GUI */
@@ -841,8 +843,9 @@ void sim_log( const char *format, ... ) {
  **********************/
 
 /* Hack for SunOS */
-extern int matherr();
-int *tclDummyMathPtr = (int *) matherr;
+// I am not using SunOS, and this produces linking error
+// extern int matherr();
+// int *tclDummyMathPtr = (int *) matherr;
 
 static char tcl_msg[256];
 
