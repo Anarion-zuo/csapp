@@ -6,8 +6,8 @@
 main:
     irmovq ele1,%rdi
     # set up stack pointer
-    # make it far from instructions
-    irmovq $0x1000,%rsp
+    # stack specified by label
+    irmovq $stack,%rsp
     # set up return value register
     irmovq $0,%rax
     call rsum_list
@@ -60,3 +60,7 @@ ele3:
 ele4:
     .quad 0xd000
     .quad 0
+
+# insert some space here
+.pos 0x1000
+stack:

@@ -9,8 +9,8 @@ main:
     irmovq $dest,%rsi
     irmovq $7,%rdx
     # set up stack pointer
-    # make it far from instructions
-    irmovq $0x1000,%rsp
+    # stack specified by label
+    irmovq $stack,%rsp
     # set up return value register
     irmovq $0,%rax
     call copy_block
@@ -53,3 +53,7 @@ src:
     .quad 0x7
 dest:
 
+
+# insert some space here
+.pos 0x1000
+stack:
