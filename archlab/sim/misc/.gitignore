@@ -1,0 +1,7 @@
+*.o
+*.yo
+*.s
+hcl*
+lex*
+yis
+yas*
