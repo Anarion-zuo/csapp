@@ -1,0 +1,55 @@
+# address offset in virtual memory
+.pos 0x0
+
+# all hex changed to decimal
+
+main:
+    # pass arguments
+    irmovq $src,%rdi
+    irmovq $dest,%rsi
+    irmovq $7,%rdx
+    # set up stack pointer
+    # make it far from instructions
+    irmovq $0x1000,%rsp
+    # set up return value register
+    irmovq $0,%rax
+    call copy_block
+    halt
+
+copy_block:
+    # return value result rax
+    irmovq $0,%rax
+L2:
+    # while (len > 0)
+    irmovq 0,%rbx
+    subq %rdx,%rbx
+    jge L1
+    # val = *src (val rcx
+    mrmovq (%rdi),%rcx
+    # src += 1
+    irmovq $8,%rbx
+    addq %rbx,%rdi
+    # *dest = val
+    rmmovq %rcx,(%rsi)
+    # dest += 1
+    addq %rbx,%rsi
+    # result ^= val
+    xorq %rcx,%rax
+    irmovq 1,%rbx
+    subq %rbx,%rdx
+    jmp L2
+L1:
+    ret
+
+.align 8
+
+src:
+    .quad 0x1
+    .quad 0x2
+    .quad 0x3
+    .quad 0x4
+    .quad 0x5
+    .quad 0x6
+    .quad 0x7
+dest:
+

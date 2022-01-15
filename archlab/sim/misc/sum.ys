@@ -1,0 +1,59 @@
+# address offset in virtual memory
+.pos 0x0
+
+# all hex changed to decimal
+
+main:
+    irmovq ele1,%rdi
+    # set up stack pointer
+    irmovq $0x100,%rsp
+    # set up return value register
+    irmovq $0,%rax
+    call sum_list
+    # test change register
+    #irmovq $0x111,%rax
+    halt
+    
+sum_list:
+    # enter
+
+    # return value register val
+    irmovq $0,%rax
+    # function argument ls
+    rrmovq %rdi,%rcx
+L2:
+    # while (ls)
+    irmovq $0,%rdx
+    subq %rcx,%rdx   # compare
+    # be mindful of destination value
+    # rdx is changed now if rcx is not 0
+    je L1           # exit while if not equal
+    # val += ls->val
+    mrmovq (%rcx),%rdx
+    addq %rdx,%rax
+    # ls = ls->next
+    mrmovq 8(%rcx),%rcx
+    jmp L2
+L1:
+    # leave
+    ret
+    
+
+# test case
+.align 8
+
+ele1:
+    .quad 0x00a
+    .quad ele2
+
+ele2:
+    .quad 0x0b0
+    .quad ele3
+
+ele3:
+    .quad 0xc00
+    .quad ele4
+
+ele4:
+    .quad 0xd000
+    .quad 0
