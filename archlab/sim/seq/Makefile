@@ -60,6 +60,17 @@ ssim+: seq+-std.hcl ssim.c sim.h $(MISCDIR)/isa.c $(MISCDIR)/isa.h
 clean:
 	rm -f ssim ssim+ seq*-*.c *.o *~ *.exe *.yo *.ys
 
+##################################################
+# My test shortcuts
+##################################################
+simtty:
+	make clean ; make VERSION=full; ./ssim -t ../y86-code/asumi.yo
 
+simgui:
+	make clean ; make VERSION=full; ./ssim -g ../y86-code/asumi.yo
 
+benchmark:
+	(make clean ; make VERSION=full ; cd ../y86-code; make testssim)
 
+ptest:
+	(make clean ; make VERSION=full ; cd ../ptest; make SIM=../seq/ssim TFLAGS=-i)
