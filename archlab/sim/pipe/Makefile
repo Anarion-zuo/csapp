@@ -61,3 +61,29 @@ clean:
 	rm -f psim pipe-*.c *.o *.exe *~ 
 
 
+##################################################
+# My test shortcuts
+##################################################
+
+testdrivers: drivers
+	@../misc/yis sdriver.yo | grep %rax
+	@../misc/yis ldriver.yo | grep %rax
+	@./correctness.pl | grep correctness
+
+benchmark:
+	@(cd ../y86-code; make testpsim)
+
+psimgui: drivers ncopy.yo
+	(make psim VERSION=full && ./psim -g ../y86-code/poptest.yo)
+
+psimtty: drivers ncopy.yo
+	(make psim VERSION=full && ./psim -t ../y86-code/poptest.yo)
+
+isatest: drivers
+	(make psim VERSION=full ; cd ../ptest; make SIM=../pipe/psim )
+
+score: drivers ncopy.yo
+	@make psim VERSION=full
+	@./correctness.pl | grep 'correctness test'
+	@./check-len.pl < ncopy.yo
+	@./benchmark.pl | grep 'Score\|Average'
