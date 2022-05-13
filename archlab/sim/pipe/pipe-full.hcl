@@ -180,7 +180,7 @@ bool need_valC =
 # Predict next value of PC
 word f_predPC = [
 	#f_icode in { IJXX, ICALL } : f_valC;
-	f_icode in { IJXX, ICALL } : f_valP;
+	f_icode in { IJXX, ICALL } : f_valC;
 	1 : f_valP;
 ];
 
