@@ -72,7 +72,8 @@ void clearjob(struct job_t *job);
 void initjobs(struct job_t *jobs);
 int maxjid(struct job_t *jobs); 
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline);
-int deletejob(struct job_t *jobs, pid_t pid); 
+int deletejob(struct job_t *jobs, pid_t pid);
+int stopjob(struct job_t *jobs, pid_t pid);
 pid_t fgpid(struct job_t *jobs);
 struct job_t *getjobpid(struct job_t *jobs, pid_t pid);
 struct job_t *getjobjid(struct job_t *jobs, int jid); 
@@ -151,6 +152,61 @@ int main(int argc, char **argv)
 
     exit(0); /* control never reaches here */
 }
+
+static void builtin_jobs(char **argv) {
+    listjobs(jobs);
+}
+
+static void builtin_bg(char **argv, int argc) {
+
+}
+
+static void builtin_fg(char **argv, int argc) {
+
+}
+
+static void nonbuiltin(char *cmd, char **argv, int argc, int is_bg) {
+    sigset_t block_set;
+    sigemptyset(&block_set);
+    sigaddset(&block_set, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &block_set, NULL);
+    int pid = fork();
+    if (pid == 0) {
+        // child
+        sigprocmask(SIG_UNBLOCK, &block_set, NULL);
+        int ret = setpgid(0, 0);
+        if (ret) {
+            unix_error("setpid failed");
+        }
+        // printf("child ready to execute at pid %d pgid %d\n", getpid(), getpgid(getpid()));
+        fflush(stdout);
+        execve(argv[0], argv, environ);
+        unix_error("execve failed");
+    } else if (pid > 0) {
+        // parent
+        int state;
+        if (is_bg) {
+            state = BG;
+        } else {
+            state = FG;
+        }
+        int ok = addjob(jobs, pid, state, cmd);
+        sigprocmask(SIG_BLOCK, &block_set, NULL);
+        if (!ok) {
+            app_error("add job failed");
+        }
+        if (is_bg) {
+            // background job
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmd);
+        } else {
+            // foreground job
+            waitfg(pid);
+        }
+    } else {
+        // error
+        app_error("fork failed");
+    }
+}
   
 /* 
  * eval - Evaluate the command line that the user has just typed in
@@ -165,7 +221,29 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline) 
 {
-    return;
+    if (cmdline[0] == '\n' && cmdline[1] == 0) {
+        return;
+    }
+    char *argv[MAXARGS];
+    memset(argv, 0, sizeof(char *) * MAXARGS);
+    int is_bg = parseline(cmdline, argv);
+    char **argv_p = argv;
+    while (*argv_p != 0) {
+        ++argv_p;
+    }
+    int argc = argv_p - argv;
+    if (strcmp("quit", argv[0]) == 0) {
+        exit(0);
+    } else if (strcmp("jobs", argv[0]) == 0) {
+        builtin_jobs(argv);
+    } else if (strcmp("bg", argv[0]) == 0) {
+        builtin_bg(argv, argc);
+    } else if (strcmp("fg", argv[0]) == 0) {
+        builtin_fg(argv, argc);
+    } else {
+        // fork then run non-builtin
+        nonbuiltin(cmdline, argv, argc, is_bg);
+    }
 }
 
 /* 
@@ -247,7 +325,37 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
-    return;
+    sigset_t mask;
+    sigemptyset(&mask);
+    while (1) {
+        int fg_pid = fgpid(jobs);
+        if (fg_pid > 0) {
+            sigsuspend(&mask);
+        } else {
+            return;
+        }
+        usleep(100 * 1000);
+    }
+    /*while (1) {
+        int stat;
+        int wait_pid = waitpid(pid, &stat, 0);
+        if (WIFEXITED(stat) && wait_pid == pid) {
+            break;
+        }
+        if (wait_pid < 0) {
+            if (errno == ECHILD) {
+
+            } else {
+                unix_error("waitpid failed");
+            }
+        }
+    }
+    sigset_t block_set;
+    sigemptyset(&block_set);
+    sigaddset(&block_set, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &block_set, NULL);
+    deletejob(jobs, pid);
+    sigprocmask(SIG_UNBLOCK, &block_set, NULL);*/
 }
 
 /*****************
@@ -263,17 +371,44 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 {
-    return;
+    int stat_loc;
+    int pid = waitpid(-1, &stat_loc, WNOHANG | WSTOPPED);
+    if (pid < 0 && errno != ECHILD) {
+        unix_error("waitpid failed");
+    } else if (pid > 0) {
+        sigset_t block_set;
+        sigemptyset(&block_set);
+        sigaddset(&block_set, SIGCHLD);
+        sigprocmask(SIG_BLOCK, &block_set, NULL);
+        if (WIFEXITED(stat_loc)) {
+            deletejob(jobs, pid);
+        } else if (WIFSTOPPED(stat_loc)) {
+            stopjob(jobs, pid);
+        }
+        sigprocmask(SIG_UNBLOCK, &block_set, NULL);
+    }
 }
 
 /* 
- * sigint_handler - The kernel sends a SIGINT to the shell whenver the
+ * sigint_handler - The kernel sends a SIGINT to the shell whenever the
  *    user types ctrl-c at the keyboard.  Catch it and send it along
  *    to the foreground job.  
  */
 void sigint_handler(int sig) 
 {
-    return;
+    // printf("shell recved sigint\n");
+    int fg_pid = fgpid(jobs);
+    int fg_jid = pid2jid(fg_pid);
+    if (fg_pid == 0) {
+        // printf("no foreground job\n");
+        return;
+    }
+    int ok = kill(-fg_pid, SIGINT);
+    if (ok) {
+        unix_error("signal send failed");
+    }
+    // printf("signal sent to process %d\n", fg_pid);
+    printf("Job [%d] (%d) terminated by signal %d\n", fg_jid, fg_pid, SIGINT);
 }
 
 /*
@@ -283,7 +418,18 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig) 
 {
-    return;
+    // printf("shell recved sigtstp\n");
+    int fg_pid = fgpid(jobs);
+    int fg_jid = pid2jid(fg_pid);
+    if (fg_pid == 0) {
+        // printf("no foreground job\n");
+        return;
+    }
+    int ok = kill(-fg_pid, SIGTSTP);
+    if (ok) {
+        unix_error("signal send failed");
+    }
+    printf("Job [%d] (%d) stopped by signal %d\n", fg_jid, fg_pid, SIGTSTP);
 }
 
 /*********************
@@ -361,6 +507,22 @@ int deletejob(struct job_t *jobs, pid_t pid)
 	    nextjid = maxjid(jobs)+1;
 	    return 1;
 	}
+    }
+    return 0;
+}
+
+/* mark the job as stopped */
+int stopjob(struct job_t *jobs, pid_t pid) {
+    int i;
+
+    if (pid < 1)
+        return 0;
+
+    for (i = 0; i < MAXJOBS; i++) {
+        if (jobs[i].pid == pid) {
+            jobs[i].state = ST;
+            return 1;
+        }
     }
     return 0;
 }
