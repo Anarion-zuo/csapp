@@ -13,6 +13,9 @@ FILES = $(TSH) ./myspin ./mysplit ./mystop ./myint
 
 all: $(FILES)
 
+run: all
+	./tsh
+
 ##################
 # Handin your work
 ##################
